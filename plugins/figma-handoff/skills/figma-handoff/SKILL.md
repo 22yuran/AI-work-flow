@@ -33,5 +33,14 @@ Technical key points:
 
 Integer CSS tokens; flex auto-sizing (no absolute positioning / hardcoded content widths except page skeleton); no invented logic; no new deps; no full-app scaffolding; per-rule `/* block <node-id> — WxH */` comments. Full list in WORKFLOW.md.
 
+## Calibration signals (help the frontend's AI re-implement more accurately)
+
+The deliverable is visual-reference input that the frontend will feed to their own AI to port into their stack (e.g. React + TDesign). Three signals sharply improve that mapping — **and they live ONLY in HTML comments, `data-ui` markers, or `handoff-audit.md`, never in rendered code**. Adding them must not change the visible DOM or `styles.css` by a single pixel/line:
+1. **Component-intent notes** (in each block's node-id comment): frame-agnostic "what component / pattern is this" so the frontend maps it to their own library — write the *intent* ("sortable table header"), never a specific library component name.
+2. **Design-token table** (in `handoff-audit.md`): the named tokens `get_design_context` already returns (e.g. `Palette/FG/…/55%`, `Text/正文`), so the frontend matches their design system instead of reverse-guessing raw rgba.
+3. **State/variant list** (in `handoff-audit.md`): list the component's states (default/hover/selected/sort asc·desc·none); render only default, record the rest as text.
+
+Anti-pattern to resist: do NOT write business logic, state machines, or event handlers into the hand-off — that's the frontend's job and only adds noise. Full detail in WORKFLOW.md.
+
 ## Related
 - Cleaning/simplifying **already-generated** code into a package → if the `design-code-packager` skill is installed, use it; otherwise apply the same constraints inline.
