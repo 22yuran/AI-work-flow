@@ -33,10 +33,13 @@ AI 工作流插件集。目前包含：
 
 ## 在别的 agent 里用（Cursor / Windsurf / Cline 等）
 
-这些 agent 不支持上面的 `/plugin` 命令，但核心工作流是 **agent 无关** 的——写在
-`plugins/figma-handoff/skills/figma-handoff/WORKFLOW.md`。
+这些 agent 不支持上面的 `/plugin` 命令，但核心工作流是 **agent 无关** 的。最简单的用法——**把工作流的链接甩给对方 agent，让它自己读**：
 
-做法：clone 本仓库，把该 `WORKFLOW.md` 作为对方 agent 的 rule / instruction 文件（放进它约定的规则目录），并把 `scripts/tile_cards.py` 一并带上。只要对方 agent 能调 Figma MCP 工具，就能照做。详见该 skill 目录内的 `README.md`。
+> 读这个工作流，帮我把这个 Figma 稿转成 HTML 交付包：
+> https://github.com/22yuran/AI-work-flow/blob/main/plugins/figma-handoff/skills/figma-handoff/WORKFLOW.md
+> Figma 链接：<你的节点链接>
+
+不用 clone、不用配置。只要对方 agent 能读文档、能调 Figma MCP 工具，就能照做。（`tile_cards.py` 脚本可无视——用到时 agent 自己会写几行拼图代码。）
 
 ## 仓库结构
 
