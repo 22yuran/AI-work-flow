@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-marketplace.json",
+  "name": "ai-work-flow",
+  "version": "1.0.0",
+  "description": "AI 工作流插件集：把设计稿/需求转成可交付产物的流程化能力。",
+  "owner": {
+    "name": "22yuran"
+  },
+  "plugins": [
+    {
+      "name": "figma-handoff",
+      "description": "把「由占位图区块拼成的 Figma 整页稿」转成标准化的纯 HTML/CSS 前端交付包（PNG 占位 + flex 布局，无交互/业务逻辑）。依赖 Figma Dev Mode MCP。",
+      "version": "1.0.0",
+      "author": { "name": "22yuran" },
+      "source": "./plugins/figma-handoff",
+      "category": "design"
+    }
+  ]
+}
