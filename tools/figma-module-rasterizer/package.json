@@ -1,0 +1,15 @@
+{
+  "name": "figma-module-rasterizer",
+  "version": "0.1.0",
+  "private": true,
+  "description": "A Figma plugin MVP that exports selected modules as PNG and replaces them in place.",
+  "scripts": {
+    "build": "esbuild src/code.ts --bundle --format=iife --target=es2017 --outfile=dist/code.js",
+    "watch": "npm run build -- --watch"
+  },
+  "devDependencies": {
+    "@figma/plugin-typings": "^1.117.0",
+    "esbuild": "^0.25.0",
+    "typescript": "^5.8.0"
+  }
+}

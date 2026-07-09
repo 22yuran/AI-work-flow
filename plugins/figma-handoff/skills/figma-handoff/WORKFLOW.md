@@ -84,6 +84,8 @@ handoff-<模块名>/
 
    等用户放好文件再拼装。
 
+   > **省事做法**：本仓库自带 Figma 插件 **figma-module-rasterizer**（`tools/figma-module-rasterizer/`）。用户可在 Figma 里选中模块一键导出 PNG（甚至原位替换成图片图层），比逐个手动 Export 快很多。适合区块多、MCP 取不到图的整页稿。
+
 ### 4. 拼装 source/
 - `index.html`：按上面的语义骨架，每区块一张 `<img>` + node-id 注释。
 - `styles.css`：用步骤 2 的元数据算 flex 布局；整数 token；每条规则注 `/* 名 <node-id> — 宽x高 */`；骨架容器给显式高度。

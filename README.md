@@ -2,9 +2,10 @@
 
 AI 工作流插件集。目前包含：
 
-| 插件 | 作用 |
-|------|------|
-| **figma-handoff** | 把「由占位图区块拼成的 Figma 整页稿」转成标准化的纯 HTML/CSS 前端交付包（每区块一张 PNG 占位、flex 布局，不含交互/业务逻辑）。 |
+| 组件 | 类型 | 作用 |
+|------|------|------|
+| **figma-handoff** | Claude Code 插件 / 工作流 | 把「由占位图区块拼成的 Figma 整页稿」转成标准化的纯 HTML/CSS 前端交付包（每区块一张 PNG 占位、flex 布局，不含交互/业务逻辑）。 |
+| **figma-module-rasterizer** | Figma 插件 | 在 Figma 里选中一个模块，一键导出为 PNG 并**原位替换**成图片图层——把要占位的模块「栅格化」。是上面工作流取占位图的推荐前置工具。 |
 
 ---
 
@@ -41,6 +42,17 @@ AI 工作流插件集。目前包含：
 
 不用 clone、不用配置。只要对方 agent 能读文档、能调 Figma MCP 工具，就能照做。（`tile_cards.py` 脚本可无视——用到时 agent 自己会写几行拼图代码。）
 
+## Figma 插件：figma-module-rasterizer（取占位图更省事）
+
+工作流最麻烦的一步是取占位图——MCP 不能整节点导出 PNG，只能手动在 Figma 里 Export。这个 Figma 插件把这步做成了一键操作：**选中模块 → 导出 PNG → 原位替换成图片图层**。
+
+安装（Figma 桌面版）：
+1. 下载 `tools/figma-module-rasterizer/module-rasterizer-dev.zip` 并解压（或直接用 `tools/figma-module-rasterizer/` 目录）。
+2. Figma → `Plugins → Development → Import plugin from manifest...`，选该目录里的 `manifest.json`。
+3. `Plugins → Development → Module Rasterizer` 运行。
+
+用法：选中 Frame/Component/Instance/组 → 选导出倍率 → `Download PNG` 导出图片，或 `Replace with PNG` 原位替换。详见 `tools/figma-module-rasterizer/README.md`。
+
 ## 仓库结构
 
 ```
@@ -52,6 +64,10 @@ plugins/figma-handoff/
     ├── WORKFLOW.md                       # ⭐ agent 无关的核心工作流
     ├── scripts/tile_cards.py             # 单卡平铺成整行的辅助脚本
     └── README.md                         # 各 agent 接入说明
+tools/figma-module-rasterizer/           # Figma 插件：模块一键栅格化
+├── manifest.json / ui.html / dist/code.js
+├── src/code.ts                           # 源码
+└── module-rasterizer-dev.zip             # 打包好的分发版
 ```
 
 ## License
