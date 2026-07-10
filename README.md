@@ -18,7 +18,13 @@ AI 工作流插件集。目前包含：
 /plugin install figma-handoff@ai-work-flow
 ```
 
-**Cursor / Windsurf / Cline / 其它 MCP agent**、手动安装、前置依赖等 → 见 **[INSTALL.md](INSTALL.md)**。
+或**一行命令手动装**（拷进 `~/.claude/skills/`，装完重启 Claude Code）：
+
+```bash
+git clone --depth 1 https://github.com/22yuran/AI-work-flow.git /tmp/aiwf && cp -r /tmp/aiwf/plugins/figma-handoff/skills/figma-handoff ~/.claude/skills/figma-handoff && rm -rf /tmp/aiwf
+```
+
+**Cursor / Windsurf / Cline / 其它 MCP agent**、前置依赖等 → 见 **[INSTALL.md](INSTALL.md)**。
 
 ---
 

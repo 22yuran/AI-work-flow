@@ -43,13 +43,17 @@
 /plugin uninstall figma-handoff@ai-work-flow
 ```
 
-### 手动方式（不走市场）
-把 skill 目录拷到 Claude Code 的 skills 目录即可：
+### 手动方式（不走市场 · 一行命令）
+
+把 skill 目录拷到 Claude Code 的 skills 目录即可。**推荐这一行**（clone 到临时目录 → 拷进 skills → 清理）：
+
 ```bash
-git clone https://github.com/22yuran/AI-work-flow.git
-mkdir -p ~/.claude/skills
-cp -r AI-work-flow/plugins/figma-handoff/skills/figma-handoff ~/.claude/skills/figma-handoff
+git clone --depth 1 https://github.com/22yuran/AI-work-flow.git /tmp/aiwf && cp -r /tmp/aiwf/plugins/figma-handoff/skills/figma-handoff ~/.claude/skills/figma-handoff && rm -rf /tmp/aiwf
 ```
+
+装完重启 Claude Code 即可识别。
+
+> 为什么不是纯 `git clone ... ~/.claude/skills/figma-handoff`？因为本仓库是插件市场结构，`SKILL.md` 在 `plugins/figma-handoff/skills/figma-handoff/` 子目录里，直接 clone 整仓会多好几层嵌套、Claude Code 认不到 SKILL.md。所以多一步 `cp` 把 skill 目录提出来。
 
 ---
 
