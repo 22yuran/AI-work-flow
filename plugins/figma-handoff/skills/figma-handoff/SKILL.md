@@ -31,7 +31,7 @@ Technical key points:
 
 ## Constraints (hard rules)
 
-Integer CSS tokens (px, gap, padding, sizes) — **except border/divider widths, which keep Figma's actual value: a `0.5px` hairline stays `0.5px`, never rounded up**; flex auto-sizing (no absolute positioning / hardcoded content widths except page skeleton); no invented logic; no new deps; no full-app scaffolding; **when sibling elements have different Figma values (size/weight/color/spacing), reproduce each per its actual value — never blanket one style across them**; per-rule `/* block <node-id> — WxH */` comments. Full list in WORKFLOW.md.
+Integer CSS tokens (px, gap, padding, sizes) — **except border/divider widths, which keep Figma's actual value: a `0.5px` hairline stays `0.5px`, never rounded up**; flex auto-sizing (no absolute positioning / hardcoded content widths except page skeleton); no invented logic; no new deps; no full-app scaffolding; **when sibling elements have different Figma values (size/weight/color/spacing), reproduce each per its actual value — never blanket one style across them**; **use real bound colors, never the `#xxx` fallback inside `var(--token, #xxx)`**; **render icons at their SVG viewBox aspect ratio and verify orientation (a frame/viewBox ratio mismatch means a rotation the export dropped — never `preserveAspectRatio:none` stretch)**; per-rule `/* block <node-id> — WxH */` comments. **Verify by re-screenshotting after any change and zooming in on <24px elements (icons, dots, radios, dashes).** Full list in WORKFLOW.md.
 
 ## Calibration signals (help the frontend's AI re-implement more accurately)
 
