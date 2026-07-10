@@ -31,7 +31,7 @@ Technical key points:
 
 ## Constraints (hard rules)
 
-Integer CSS tokens; flex auto-sizing (no absolute positioning / hardcoded content widths except page skeleton); no invented logic; no new deps; no full-app scaffolding; per-rule `/* block <node-id> — WxH */` comments. Full list in WORKFLOW.md.
+Integer CSS tokens (px, gap, padding, sizes) — **except border/divider widths, which keep Figma's actual value: a `0.5px` hairline stays `0.5px`, never rounded up**; flex auto-sizing (no absolute positioning / hardcoded content widths except page skeleton); no invented logic; no new deps; no full-app scaffolding; per-rule `/* block <node-id> — WxH */` comments. Full list in WORKFLOW.md.
 
 ## Calibration signals (help the frontend's AI re-implement more accurately)
 
