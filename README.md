@@ -9,6 +9,19 @@ AI 工作流插件集。目前包含：
 
 ---
 
+## 🚀 安装（figma-handoff）
+
+**Claude Code**（仓库已是标准插件市场结构，两条命令搞定）：
+
+```
+/plugin marketplace add 22yuran/AI-work-flow
+/plugin install figma-handoff@ai-work-flow
+```
+
+**Cursor / Windsurf / Cline / 其它 MCP agent**、手动安装、前置依赖等 → 见 **[INSTALL.md](INSTALL.md)**。
+
+---
+
 ## 使用流程（按操作顺序）
 
 ```
