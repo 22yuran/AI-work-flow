@@ -20,7 +20,7 @@ Interaction script in brief (details in WORKFLOW.md):
 2. Ask "any problems?" — fix if so.
 3. Ask whether there are **new modules** needing real-code packages (components the frontend library lacks).
 4. When converting new modules, **remind the user to paste links one module at a time** — bulk upload causes transcoding hallucinations.
-5. Convert each new module into a real-code package.
+5. Convert each new module into a real-code package. **If one node actually contains several heterogeneous sub-modules (e.g. tab + table row + dialog, or things on different layers/reuse boundaries), split them into separate packages — one merged package blurs semantics for the frontend and dilutes small-element verification.**
 6. Assemble everything into one big folder: `整体页面/` + one folder per new module.
 
 Technical key points:
