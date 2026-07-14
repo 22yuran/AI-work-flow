@@ -15,9 +15,12 @@
 底层逻辑两半,分别产出:
 
 ### A. 整体页面 → 间距/位置(`gaps` + 各模块 `bbox`)
-- 从整体页面(可用插件生成的副本/整页,或原始设计稿)用 `get_metadata` 读每个模块的 x/y/w/h。
-- 相邻模块的期望间距写进 `gaps[]`(`from`/`to`/`value`/`direction`)。**即使模块是 PNG 占位,位置/间距是真实的**。
+- 从整体页面(可用插件生成的副本/整页,或原始设计稿)用 `get_metadata` 读布局树(每块 x/y/w/h)。
+- **间距全集必须靠枚举、不许手挑**(手挑必漏):把 `get_metadata` 输出存成文件,喂给
+  `node ${SKILL_DIR}/scripts/enumerate-gaps.mjs <tree.xml>` → 自动列出**每一组同级模块的相邻间距全集**
+  (纵/横向、跳过隐藏子树、模块粒度不产生噪声),产出 `enumerated-gaps.json` 作为 `gaps[]` 的完整起点。
 - 每个模块的 `bbox` 写进 `modules[]`。
+- **完整性铁律**:`gaps[]` 来自枚举器全集;凡是没纳入检查或映射不到 dev 的,必须在报告里**列出来**(覆盖 X/N),禁止把子集当全集。**即使模块是 PNG 占位,位置/间距也是真实的**。
 
 ### B. 模块组件 → 内部细节(`modules[]` 其余字段)
 - 对每个真实模块节点用 `get_design_context` 读:字体(family/size/lineHeight/weight)、颜色**真值**(rgba,不抄 `var(--token,#xxx)` 的 fallback)、圆角、文案(分 `label`/`data`)、状态。
