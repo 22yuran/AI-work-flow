@@ -42,10 +42,5 @@ The deliverable is visual-reference input that the frontend will feed to their o
 
 Anti-pattern to resist: do NOT write business logic, state machines, or event handlers into the hand-off — that's the frontend's job and only adds noise. Full detail in WORKFLOW.md.
 
-## Machine-readable acceptance contract (feeds the `design-review` skill)
-
-The same metadata already gathered for `handoff-audit.md` should also be emitted as **`handoff-contract.json`** — a structured, machine-readable acceptance baseline. It is not a frontend burden; it is the datum the **`design-review`** skill uses to auto-check whether the delivered page matches the design (module presence, bbox, spacing, radius, typography, color values, static copy, image ratios, declared states). Schema + field-by-field spec live in the design-review skill's `CONTRACT.md`. In short: promote the audit table from prose to `{ contractVersion, source{canvas}, tolerances, modules[...] }`. This is what turns the hand-off package from "extra work for the frontend" into "the acceptance basis for the delivery".
-
 ## Related
 - Cleaning/simplifying **already-generated** code into a package → if the `design-code-packager` skill is installed, use it; otherwise apply the same constraints inline.
-- **Accepting a frontend delivery against this hand-off** → use the `design-review` skill with the emitted `handoff-contract.json`.
