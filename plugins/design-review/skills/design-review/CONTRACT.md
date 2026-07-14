@@ -26,11 +26,14 @@
     "canvas": { "width": 1280, "height": 3200 }   // 验收 viewport 宽度取 canvas.width
   },
   "tolerances": { /* 见下 · 全局默认 */ },
-  "modules": [ /* 每模块一条 */ ]
+  "modules": [ /* 每模块一条 —— 模块组件半：细节 */ ],
+  "gaps":    [ /* 模块之间的间距 —— 整体页面半：间距/位置 */ ]
 }
 ```
 
 `canvas.width` 必须等于设计稿宽度：验收层据此设置浏览器 viewport，否则响应式布局下 bbox 全错。
+
+**两半对应底层逻辑**：`modules[]`（含 `bbox`/`typography`/`colors`/`radius`/`texts`/`states`）= **模块组件半**，查每个模块的内部细节；`gaps[]` = **整体页面半**，查模块之间的位置/间距。
 
 ---
 
@@ -147,6 +150,23 @@ v1 不驱动交互；仅把 `rendered:false` 的状态作为 `info` 列入报告
 颜色默认逐通道容差（简单够用）；`fontFamily` 只做包含匹配（大小写不敏感），默认 `warn`。
 
 模块级可用 `toleranceOverrides` 覆盖任意键。
+
+---
+
+## gaps（整体页面半：模块间距 / 位置）
+
+即使整体页面里模块是 PNG 占位，模块之间的**位置和间距是真实的**（frame 有真实 x/y/w/h）。用 `gaps[]` 声明模块之间的期望间距；引擎测两个模块**渲染后**盒子的间隙并与 `value` 比对（用 `tolerances.spacing`）。
+
+```jsonc
+"gaps": [
+  { "from": "sec-开场", "to": "sec-主体", "value": 16, "direction": "vertical" },
+  { "from": "card-1",   "to": "card-2",   "value": 12, "direction": "vertical", "severity": "warn" }
+]
+```
+- `from` 在前/上，`to` 在后/下（两者都必须是 `modules[]` 里已声明、且能映射到 dev DOM 的模块）。
+- `direction`：`vertical`（默认，测 `to.top - from.bottom`）| `horizontal`（测 `to.left - from.right`）。
+- `severity` 省略默认 `error`。
+- **必须渲染级(B)才能测**——间距是布局后才存在的量，静态源码算不出。
 
 ---
 

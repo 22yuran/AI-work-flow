@@ -1,69 +1,54 @@
 ---
 name: design-review
-description: 基于 hand-off contract 的开发交付验收（design-delivery acceptance）。当设计师/走查者想核对"开发做出来的页面是否符合设计要求"时用。输入 handoff-contract.json + 开发页面 URL/HTML，输出客观的走查问题清单（模块缺失、宽高/间距/字体/圆角/颜色不符、文案缺失、图片拉伸等）。不是代码 diff，也不是截图猜测——规则给结论，AI 只归纳解释。依赖系统 Chrome，不依赖 Figma。
+description: V2 · 基于 Figma 基准的「开发交付验收」。设计稿沉淀成机器可读的验收基准(contract)，把前端交付的代码跑成渲染态、逐项比对、输出问题清单反馈前端。当设计师/走查者要核对"前端做出来的页面是否符合设计"时用。不是交付(交付是 V1 figma-handoff)，是验收。规则给结论、AI 只归纳；渲染级(computed style)为准；依赖系统 Chrome，不依赖生产登录。
 allowed-tools: Read Write Edit Bash Grep Glob
 ---
 
-# Design Review（基于 hand-off contract 的开发交付验收）
+# Design Review（V2 · 开发交付验收）
 
-把设计交付包沉淀出的 **`handoff-contract.json`** 当作**验收基准**，检查开发交付的页面是否满足其中定义的模块、布局、间距、文案、样式 token、状态与边界要求。
+把设计稿沉淀成**机器可读的验收基准**(`handoff-contract.json`)，用它检查**前端交付的代码**是否满足设计要求，输出**问题清单反馈前端**。
 
-**定位**：设计侧的走查提效工具。还原度问题仍由前端修，但设计侧能**更快、更客观**地指出"哪里没还原"，且问题可定位、可追踪。
+**与 V1 的关系**：V1 `figma-handoff` 负责"把设计转成交付包给前端"，本 skill 完全独立、**不改动 V1**。同一套底层逻辑,用途翻转:交付 → **验收**。
 
-**为什么不做代码 diff / 截图比对**：前端用 React/TDesign/组件库/动态 class，DOM 与交付包天然不同构，diff 会惩罚"实现方式不同"而非"还原度不够"；截图比对对小元素/抗锯齿/DPR 极敏感，AI 只能猜。本 skill 比的是**离散、可判定的事实**，把 AI 从"判断者"降级成"归纳者"，幻觉大幅减少。
+## 底层逻辑(两半)
 
-## 与 figma-handoff 的关系（两层）
+- **整体页面 → 间距/位置**：即使模块是 PNG 占位,frame 的位置/间距是真实的 → contract 的 `gaps[]`。
+- **模块组件 → 内部细节**：真实模块节点的字体/颜色真值/圆角/文案/状态 → contract 的 `modules[]`。
 
-1. **figma-handoff（生成层）**：从 Figma 生成 `handoff-contract.json`（机器可读验收基准）+ 交付包。
-2. **design-review（本 skill · 验收层）**：消费 contract + 开发页面 → 输出问题清单。**不依赖 Figma**，可脱离设计环境跑（含 CI）。
+## 为什么渲染级(B)为准
 
-契约规范见 **`${CLAUDE_SKILL_DIR}/CONTRACT.md`**（`contract.schema.json` 可做校验，`contract.example.json` 是样例）。
+比对的是前端**代码**。有两种口径:
+- **静态**(读 `.vue`/CSS 声明值):快,但读到的是"写了什么",受层叠覆盖、继承、token/变量影响,且**间距/位置只有布局后才有**——静态测不了。
+- **渲染级 B(computed style,本 skill 采用)**:把前端代码跑成真实 DOM 读 computed style + bbox,是"实际长什么样"。**间距那半必须 B**。
 
-## 运行流程
+前端代码跑不起来读不了 computed → 用 **mock 渲染 harness**(见 WORKFLOW),不碰生产登录。
 
-完整工作流见 **`${CLAUDE_SKILL_DIR}/WORKFLOW.md`**。简述：
+## 两阶段
 
-0. **拿到三样输入**：`handoff-contract.json`、开发页面（URL 或本地 `index.html`）、可选的**模块 selector 映射**（强烈建议——它是验收可靠性的天花板）。
-1. **装依赖**（一次）：`cd ${CLAUDE_SKILL_DIR}/scripts && npm i`（用 `puppeteer-core`，复用系统 Chrome，不下载浏览器）。
-2. **跑引擎**：
-   ```bash
-   node ${CLAUDE_SKILL_DIR}/scripts/review.mjs \
-     --contract path/to/handoff-contract.json \
-     --url http://localhost:5173/goods \
-     --out review-out
-   ```
-   产出 `review-out/review-findings.json`（客观事实：expected/actual/severity）。
-3. **AI 归纳**：读 `review-findings.json`，写成 `design-review-report.md`——按模块分组、标严重级、猜可能原因、给修复建议。**AI 只归纳,不改判 pass/fail**（那是规则的事）。
+1. **阶段① 生成基准**：读整体页面(`gaps`)+ 模块组件(`modules`)→ 结构化 `handoff-contract.json`。契约规范见 `${CLAUDE_SKILL_DIR}/CONTRACT.md`(schema/example 同目录)。
+2. **阶段② 渲染级验收**：把前端代码 mock 跑成 `localhost` → `review.mjs --url` 读 computed → 规则比对 → `review-findings.json` → AI 归纳成 `design-review-report.md`(可视化 HTML 可选)→ 反馈前端。
 
-## 检查项（v1 · 确定性优先）
+## 检查项(确定性优先,规则判定)
 
-引擎按 computed style + bounding box 做规则比对（几乎零幻觉）：
+- **模块间距**(整体页面半):`gaps` 声明的相邻模块间距,测渲染盒子间隙比对。
+- **bbox / 内边距 / 圆角 / 字体(字号·行高·字重·族) / 颜色(rgba 真值) / 文案(label 严格·data 宽松) / 图片比例 / 状态**(模块组件半)。
 
-- **模块存在/缺失**（mapping 命中与否）
-- **bbox** 宽高
-- **间距**：padding 四边、auto-layout gap
-- **圆角**：逐角 border-radius
-- **字体**：字号 / 行高 / 字重 / 字体族（族只做包含匹配）
-- **颜色**：解析成 rgba 后按容差比（token 名只供报告，不参与比对）
-- **文案**：label 严格比、data 只查存在/格式（压误报）
-- **图片**：渲染比 vs 本征比（判拉伸）
-- **状态**：`rendered:false` 的设计态列为 info，提示前端补（v1 不驱动交互）
+容差集中在 contract `tolerances`(模块可 `toleranceOverrides`)。检查开关/严重级在模块 `checks` 与 `gaps[].severity`。
 
-容差集中在 contract 的 `tolerances`（模块可 `toleranceOverrides` 覆盖）。检查开关/严重级在模块 `checks`。
+## mapping 是可靠性天花板
 
-## mapping 是可靠性的天花板（重点）
+基准里每个模块要能定位到前端 DOM:优先 `selector`(建议前端加 `data-review-id`),兜底 `anchorText`。引擎在 finding 里标 `matchConfidence`,不假装全自动。
 
-contract 里每个模块要能定位到开发 DOM。两种方式：
-- **selector（首选）**：让开发给关键模块加 `data-review-id`，或走查者提供 selector。可信度高。
-- **anchor 兜底**：用唯一文案 + 大致位置锚定。引擎会在 finding 里标 `matchConfidence: "anchor"`，**明确降级**，不假装全自动。
+## 运行(阶段②)
+```bash
+cd ${CLAUDE_SKILL_DIR}/scripts && npm i          # 首次，装 puppeteer-core(复用系统 Chrome)
+node review.mjs --contract <contract.json> --url <localhost 或 file://> \
+  --waitFor "<关键选择器>" --out <目录>
+```
+认证型 SPA:`--connect http://localhost:9222` 接管已登录 Chrome(见 WORKFLOW 备注)。
 
-无映射 → 结论可能漏配；报告里据 `matchConfidence` 提示可信度。
-
-## 边界（v1 有意不做）
-
-- **交互态**（hover/点击后的排序 asc·desc）：需脚本驱动，留到 v2。
-- **颜色 token 名回收**：前端用自己的 token，拿不回名字——只比解析后的值。
-- **响应式**：引擎按 `contract.source.canvas.width` 设 viewport；多断点留到 v2。
+## 边界(有意不做)
+交互态(hover/点击后态)需脚本驱动,留后续;颜色 token 名不回收(只比 rgba 值);多断点响应式按 `canvas.width` 单宽验收。
 
 ## Related
-- 生成 contract 与交付包 → `figma-handoff` skill。
+- 生成交付包(V1) → `figma-handoff` skill(本 skill 不改它)。

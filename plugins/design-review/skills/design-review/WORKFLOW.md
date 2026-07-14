@@ -1,96 +1,88 @@
-# Design Review 工作流：hand-off contract → 开发交付验收清单
+# Design Review 工作流（V2 · 开发交付验收）
 
-> **agent 无关**的工作流说明书。任何支持文件读写 + 能跑 Node 的 agent 都可执行。
-> 定位：设计侧走查提效。**规则给结论，AI 只归纳解释**——这是相较"截图比对/代码 diff"幻觉大幅减少的根本原因。
-
-## 目标
-
-输入设计侧沉淀的 `handoff-contract.json`（机器可读验收基准）+ 开发交付页面，输出**客观、可定位、可追踪**的走查问题清单：哪个模块、哪一项（尺寸/间距/字体/圆角/颜色/文案/图片/状态）、期望值 vs 实际值、严重级。
+> **agent 无关**说明书。目标:用 Figma 沉淀的验收基准,检查前端交付代码,输出可定位、可反馈的问题清单。**规则给结论,AI 只归纳**——这是相较截图/代码 diff 幻觉大幅减少的根本。
+> V1 `figma-handoff`(交付)**不改动**;本 skill 是独立的验收层。
 
 ## 前置依赖
+1. **Figma 桌面 + Dev Mode MCP**(阶段① 读设计基准用)。
+2. **Node 18+ 与系统 Chrome/Chromium**(阶段② 渲染 + 读 computed;引擎用 `puppeteer-core` 复用系统 Chrome,不下载浏览器)。找不到 Chrome 用 `--chrome <路径>` 或环境变量 `CHROME`。
+3. 首次:`cd ${SKILL_DIR}/scripts && npm i`。
 
-1. **Node 18+**。
-2. **系统 Chrome / Chromium**（引擎用 `puppeteer-core` 复用它，不下载浏览器）。
-   - macOS：`/Applications/Google Chrome.app/Contents/MacOS/Google Chrome`
-   - Linux：`google-chrome` / `chromium`
-   - Windows：`C:/Program Files/Google/Chrome/Application/chrome.exe`
-   - 找不到时用 `--chrome <路径>` 或环境变量 `CHROME` 指定。
-3. **首次装依赖**：`cd ${SKILL_DIR}/scripts && npm i`。
+---
 
-## 输入（三样）
+## 阶段① 生成验收基准(handoff-contract.json)
 
-1. **`handoff-contract.json`** —— 由 `figma-handoff` 生成，规范见 `CONTRACT.md`。
-2. **开发交付页面** —— `http(s)://` URL，或本地 `file:///abs/path/index.html`。
-3. **（强烈建议）模块 selector 映射** —— 见下"mapping"。**它决定验收可靠性的上限。**
+底层逻辑两半,分别产出:
 
-## 使用流程（总纲）
+### A. 整体页面 → 间距/位置(`gaps` + 各模块 `bbox`)
+- 从整体页面(可用插件生成的副本/整页,或原始设计稿)用 `get_metadata` 读每个模块的 x/y/w/h。
+- 相邻模块的期望间距写进 `gaps[]`(`from`/`to`/`value`/`direction`)。**即使模块是 PNG 占位,位置/间距是真实的**。
+- 每个模块的 `bbox` 写进 `modules[]`。
 
-0. **确认三样输入齐全**。缺 contract → 先回 `figma-handoff` 生成;缺 selector 映射 → 走 anchor 兜底,但要在报告里如实标注可信度下降。
-1. **装依赖**（首次）：`cd ${SKILL_DIR}/scripts && npm i`。
-2. **跑引擎**：
-   ```bash
-   node ${SKILL_DIR}/scripts/review.mjs \
-     --contract <contract路径> \
-     --url <URL 或 file://...> \
-     --out <输出目录，默认当前目录>
-   ```
-   产出 `<out>/review-findings.json`。
-3. **AI 归纳报告**：读 `review-findings.json`，产出 `design-review-report.md`：
-   - 按**模块**分组，组内按严重级(error→warn→info)。
-   - 每条列 **期望 / 实际 / 可能原因 / 建议**。
-   - 顶部放 summary（模块数、命中率、error/warn/info 计数）。
-   - **不改判**引擎结论；只做归类、去重、猜因、提修复方向。
-4. **可信度提示**：凡 `matchConfidence != "selector"` 的 finding,在报告里标注"该结论基于文案锚定,可能漏配,建议加 selector 复核"。
+### B. 模块组件 → 内部细节(`modules[]` 其余字段)
+- 对每个真实模块节点用 `get_design_context` 读:字体(family/size/lineHeight/weight)、颜色**真值**(rgba,不抄 `var(--token,#xxx)` 的 fallback)、圆角、文案(分 `label`/`data`)、状态。
+- 逐个模块地读(一次太多易错),对应 V1"一个一个贴链接"的习惯。
 
-## mapping —— 可靠性天花板（务必读）
+### C. mapping
+- 每个模块补 `mapping.selector`(建议前端加 `data-review-id`)或 `fallback.anchorText`。这是验收可靠性的天花板。
 
-contract 里每个模块必须能对应到开发页面的一个 DOM 元素。DOM 与交付包不同构,所以：
+产出 `handoff-contract.json`,字段/schema 见 `CONTRACT.md` + `contract.schema.json`。
 
-- **首选 selector**：推动开发给关键模块加 `data-review-id="xxx"`（或走查者提供稳定 selector）。写进 contract 的 `mapping.selector`。可信度 ~95%。
-- **anchor 兜底**：`mapping.fallback.anchorText` + 可选 `nearBBox`。引擎找"包含该文案、且离该位置最近、面积最小"的元素。可信度较低,引擎标 `matchConfidence: "anchor"`。
-- 子目标（typography/colors/images 的 `target`）是**相对模块根**的选择器；`"self"` 或缺省表示模块自身。
+---
 
-> 经验：验收成败 80% 在 mapping,20% 在规则。规则很好写,mapping 是真问题。第一次跑若大量"未命中",优先补 selector,而不是调容差。
+## 阶段② 渲染级验收
 
-## 检查项与判定（引擎做,确定性优先）
+### 1. 把前端代码跑成渲染态(取 computed style 的关键)
+前端交付常是**组件源码或认证型 SPA**,直接读不到 computed。三种拿到渲染态的方式,按可行性选:
 
-| 检查 | 取值来源 | 判定 |
-|---|---|---|
-| mapping | querySelector / anchor | 命中与否 |
-| bbox | `getBoundingClientRect` | 宽高在 `tolerances.size` 内 |
-| spacing | computed padding / gap | 四边 padding、gap(按 layoutMode 取 column/rowGap)在 `tolerances.spacing` 内 |
-| radius | computed 四角 border-radius | 每角在 `tolerances.radius` 内 |
-| typography | computed font-* | 字号/行高/字重在各自容差内;字体族做包含匹配(warn) |
-| color | computed color/bg/border | 解析 rgba 后逐通道 `tolerances.color`;token 名仅供报告 |
-| text | 模块 textContent | label 归一化后包含;data 仅查非空/格式 |
-| image | `<img>` natural + 渲染尺寸 | 渲染比 vs 本征比在 `tolerances.imageRatio` 内(判拉伸) |
-| states | contract 声明 | `rendered:false` 列 info,提示前端补(不驱动交互) |
+- **① mock 渲染 harness(推荐,内部 SPA 最稳)**:很多组件内置 mock(如 `USE_MOCK` + `MOCK_OUTPUT`)。搭最小 Vite 环境挂真实组件、stub 掉项目内部 import、开 mock 即时渲染 → `localhost`。**不碰生产登录/DevTools**。(本仓库 aiDiagnosis 案例即用此法验证。)
+- **② 可直达的本地/测试 URL**:前端 dev server 起的地址,直接 `--url`。
+- **③ 接管已登录 Chrome**:`--connect http://localhost:9222`(Chrome 以 `--remote-debugging-port=9222 --user-data-dir=<独立目录>` 启动并登录;新版 Chrome 默认资料禁远程调试,需独立 user-data-dir)。
 
-严重级：模块 `checks` 覆盖全局默认(`bbox/spacing/typography/text/image=error, radius/color=warn, states=info`)。`off` 跳过。
-
-## 输出结构
-
-`review-findings.json`（引擎产,客观）：
-```jsonc
-{
-  "reviewedAt": "...", "devTarget": "...", "contract": "...",
-  "summary": { "modules", "matched", "unmatched", "error", "warn", "info" },
-  "findings": [ { "moduleId","moduleName","matchConfidence","check","target","severity","expected","actual","message" } ]
-}
+### 2. 跑引擎
+```bash
+node ${SKILL_DIR}/scripts/review.mjs \
+  --contract <contract.json> \
+  --url <localhost 或 file://...>（或 --connect <cdp>） \
+  --waitFor "<客户端渲染出现的关键选择器，如 .collapse-label>" \
+  --delay <毫秒，可选> \
+  --out <输出目录>
 ```
+产出 `<out>/review-findings.json`(客观:expected/actual/severity/matchConfidence)。
 
-`design-review-report.md`（AI 产,给人看):按模块归类的走查清单 + summary + 可信度提示。
+### 3. AI 归纳报告
+读 `review-findings.json` → 写 `design-review-report.md`(可选 HTML 可视化:色块对比、✓/⚠/ℹ 徽章):
+- 按**模块**分组,组内按严重级(error→warn→info);每条列 期望/实际/可能原因/修复建议。
+- 顶部 summary(模块数、命中率、间距问题数、error/warn/info)。
+- `matchConfidence != "selector"` 的项标注"基于文案锚定,可能漏配,建议加 selector 复核"。
+- **不改判**规则结论;只归类、去重、猜因、给方向。这份就是**反馈给前端**的清单。
 
-## 边界（v1 有意不做,避免假装能做）
+---
 
-- 交互态(hover / 排序 asc·desc 点击态):需 Playwright 驱动,留 v2。
-- 颜色 token 名回收:前端用自己 token,拿不回名 → 只比值。
-- 多断点响应式:引擎按 `canvas.width` 单宽度验收。
-- 文案 data 内容比对:动态数据不比原文(设计占位≠线上真值),只查存在/格式。
+## 检查项与判定(引擎)
+
+| 检查 | 归属 | 判定 |
+|---|---|---|
+| **gap** | 整体页面半 | 按 `gaps[]` 测两模块渲染盒子间隙(纵向 `to.top-from.bottom`;横向 `to.left-from.right`),`tolerances.spacing` |
+| bbox | 模块组件半 | `getBoundingClientRect` 宽高,`tolerances.size` |
+| spacing | 模块组件半 | 元素自身 padding / auto-layout gap |
+| radius | 模块组件半 | 四角 border-radius |
+| typography | 模块组件半 | 字号/行高/字重各自容差;字体族包含匹配(warn) |
+| color | 模块组件半 | computed rgba 逐通道 `tolerances.color`;token 名仅供报告 |
+| text | 模块组件半 | label 归一化后包含;data 仅查非空/格式 |
+| image | 模块组件半 | 渲染比 vs 本征比,`tolerances.imageRatio` |
+| states | 模块组件半 | `rendered:false` 列 info,提示前端补 |
+
+严重级:模块 `checks` / `gaps[].severity` 覆盖全局默认。`off` 跳过。
+
+## 边界(有意不做,避免假装能做)
+- 交互态(hover/排序点击态):需 Playwright 驱动,留后续。
+- 颜色 token 名回收:前端用自己 token,拿不回名 → 只比 rgba 值。
+- 多断点响应式:按 `canvas.width` 单宽度验收。
+- 文案 data 内容:动态数据不比原文,只查存在/格式。
 
 ## 常见坑
-
 - **大量未命中** → mapping 问题,补 selector,别调容差。
-- **颜色全 warn** → 可能 alpha 合成/取整;先看 `tolerances.color.perChannel` 是否过严,或改用 deltaE(v1.5)。
-- **行高报 normal** → 开发用了 `line-height: normal`,与设计的固定行高无法数值比对 → 视为不符(提示前端设固定行高)。
-- **viewport 宽度不对** → 引擎已按 `canvas.width` 设;若开发页面强响应式,确认两边同宽再看 bbox。
+- **间距全不对** → 确认 viewport 宽 = `canvas.width`;确认 `gaps` 的 from/to 都能映射到 dev DOM。
+- **行高报 normal** → 前端用了 `line-height: normal`,与固定行高无法数值比 → 视为不符。
+- **客户端渲染测到空** → 用 `--waitFor` 等关键选择器出现;必要时 `--delay`。

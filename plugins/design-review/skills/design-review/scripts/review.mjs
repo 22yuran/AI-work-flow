@@ -163,6 +163,10 @@ function pageExtract(spec) {
     const out = {
       w: Math.round(r.width),
       h: Math.round(r.height),
+      top: Math.round(r.top),
+      left: Math.round(r.left),
+      bottom: Math.round(r.bottom),
+      right: Math.round(r.right),
       fontFamily: cs.fontFamily,
       fontSize: cs.fontSize,
       lineHeight: cs.lineHeight,
@@ -452,15 +456,34 @@ async function main() {
   const outDir = args.out || ".";
   fs.mkdirSync(outDir, { recursive: true });
 
-  const chrome = findChrome(args.chrome);
-  const browser = await puppeteer.launch({
-    executablePath: chrome,
-    headless: "new",
-    args: ["--no-sandbox", "--hide-scrollbars"]
-  });
+  // Two modes:
+  //  - default: launch a fresh headless system Chrome (public pages).
+  //  - --connect <http://localhost:9222>: attach to an ALREADY-RUNNING Chrome
+  //    (started with --remote-debugging-port) so authenticated pages keep the
+  //    user's login session. We reuse an already-open matching tab if present.
+  let browser;
+  let page;
+  let connected = false;
+  const sameUrl = (a, b) => (a || "").split("?")[0] === (b || "").split("?")[0];
 
-  try {
-    const page = await browser.newPage();
+  if (args.connect) {
+    browser = await puppeteer.connect({ browserURL: args.connect, defaultViewport: null });
+    connected = true;
+    const pages = await browser.pages();
+    page = pages.find((p) => sameUrl(p.url(), args.url));
+    if (!page) {
+      page = await browser.newPage();
+      await page.goto(args.url, { waitUntil: "networkidle2", timeout: Number(args.timeout) || 30000 });
+    }
+  } else {
+    const chrome = findChrome(args.chrome);
+    browser = await puppeteer.launch({
+      executablePath: chrome,
+      headless: "new",
+      args: ["--no-sandbox", "--hide-scrollbars"]
+    });
+    page = await browser.newPage();
+    // Force the design canvas width so bbox comparison is meaningful.
     await page.setViewport({
       width: Math.round(canvas.width),
       height: Math.round(canvas.height) || 900,
@@ -470,6 +493,17 @@ async function main() {
       waitUntil: "networkidle2",
       timeout: Number(args.timeout) || 30000
     });
+  }
+
+  try {
+    // Optionally wait for a selector (SPA/client-render pages need this before
+    // the target modules exist in the DOM).
+    if (args.waitFor) {
+      await page.waitForSelector(args.waitFor, { timeout: Number(args.timeout) || 30000 });
+    }
+    if (args.delay) {
+      await new Promise((r) => setTimeout(r, Number(args.delay)));
+    }
 
     // Build a serializable spec for in-page extraction.
     const spec = contract.modules.map((m) => {
@@ -497,6 +531,42 @@ async function main() {
       findings.push(...compareModule(mod, measured, modTol));
     }
 
+    // Inter-module spacing (the "整体页面" half): each gaps entry declares the
+    // expected distance between two modules; measure the rendered gap and compare.
+    for (const g of contract.gaps || []) {
+      const sev = g.severity || "error";
+      if (sev === "off") continue;
+      const nameOf = (id) => {
+        const m = contract.modules.find((x) => x.moduleId === id);
+        return m ? m.name || id : id;
+      };
+      const a = byId.get(g.from);
+      const b = byId.get(g.to);
+      const label = `${nameOf(g.from)} → ${nameOf(g.to)}`;
+      if (!a || !a.found || !b || !b.found) {
+        findings.push({
+          moduleId: g.from, moduleName: label, matchConfidence: "none",
+          check: "gap", target: g.to, severity: sev,
+          expected: g.value, actual: "missing",
+          message: `间距两端模块未全部定位到（${label}）`
+        });
+        continue;
+      }
+      const horizontal = g.direction === "horizontal";
+      const actual = horizontal
+        ? b.root.left - a.root.right
+        : b.root.top - a.root.bottom;
+      if (!within(g.value, actual, tol.spacing)) {
+        findings.push({
+          moduleId: g.from, moduleName: label,
+          matchConfidence: a.via === "selector" && b.via === "selector" ? "selector" : "anchor",
+          check: "gap", target: g.to, severity: sev,
+          expected: { gap: g.value }, actual: { gap: actual },
+          message: `${horizontal ? "横向" : "纵向"}间距 ${label}：期望 ${g.value} → 实际 ${actual}`
+        });
+      }
+    }
+
     const summary = {
       modules: contract.modules.length,
       matched: measuredList.filter((m) => m.found).length,
@@ -520,7 +590,11 @@ async function main() {
     console.log(`问题：error ${summary.error} · warn ${summary.warn} · info ${summary.info}`);
     console.log(`已写出 ${outPath}`);
   } finally {
-    await browser.close();
+    if (connected) {
+      browser.disconnect();
+    } else {
+      await browser.close();
+    }
   }
 }
 

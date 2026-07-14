@@ -82,5 +82,8 @@
         "bbox": "error", "spacing": "error", "typography": "error", "color": "warn", "text": "warn", "image": "error"
       }
     }
+  ],
+  "gaps": [
+    { "from": "85:5505", "to": "85:5540", "value": 8, "direction": "vertical", "severity": "error" }
   ]
 }

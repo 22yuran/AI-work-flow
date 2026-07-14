@@ -31,6 +31,22 @@
     "modules": {
       "type": "array",
       "items": { "$ref": "#/$defs/module" }
+    },
+    "gaps": {
+      "type": "array",
+      "description": "整体页面半：声明模块之间的期望间距。引擎测两模块渲染盒子的间隙并与 value 比对。",
+      "items": {
+        "type": "object",
+        "required": ["from", "to", "value"],
+        "additionalProperties": false,
+        "properties": {
+          "from": { "type": "string", "description": "起始模块 moduleId（在前/在上）" },
+          "to": { "type": "string", "description": "结束模块 moduleId（在后/在下）" },
+          "value": { "type": "number", "description": "期望间距 px" },
+          "direction": { "enum": ["vertical", "horizontal"], "default": "vertical" },
+          "severity": { "$ref": "#/$defs/severity" }
+        }
+      }
     }
   },
   "$defs": {
