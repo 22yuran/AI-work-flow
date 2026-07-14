@@ -562,9 +562,22 @@ async function main() {
       findings.push(...compareModule(mod, measured, modTol));
     }
 
-    // Inter-module spacing (the "整体页面" half): each gaps entry declares the
-    // expected distance between two modules; measure the rendered gap and compare.
-    for (const g of contract.gaps || []) {
+    // Inter-module spacing (the "整体页面" half). 两种声明方式，归一处理:
+    //  - 顶层 gaps[](显式 from/to)
+    //  - 模块自带 gapBefore {after, value}(细节+间距合一:间距挂在模块上)
+    const allGaps = [
+      ...(contract.gaps || []),
+      ...contract.modules
+        .filter((m) => m.gapBefore && m.gapBefore.after != null)
+        .map((m) => ({
+          from: m.gapBefore.after,
+          to: m.moduleId,
+          value: m.gapBefore.value,
+          direction: m.gapBefore.direction,
+          severity: m.gapBefore.severity
+        }))
+    ];
+    for (const g of allGaps) {
       const sev = g.severity || "error";
       if (sev === "off") continue;
       const nameOf = (id) => {

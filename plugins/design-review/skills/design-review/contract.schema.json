@@ -230,7 +230,19 @@
             "states": { "$ref": "#/$defs/severity" }
           }
         },
-        "toleranceOverrides": { "$ref": "#/$defs/tolerances" }
+        "toleranceOverrides": { "$ref": "#/$defs/tolerances" },
+        "gapBefore": {
+          "type": "object",
+          "description": "细节+间距合一:该模块相对前一个语义模块的期望间距(间距挂在模块上)。",
+          "required": ["after", "value"],
+          "additionalProperties": false,
+          "properties": {
+            "after": { "type": "string", "description": "前一个模块的 moduleId(在前/在上)" },
+            "value": { "type": "number", "description": "期望间距 px" },
+            "direction": { "enum": ["vertical", "horizontal"], "default": "vertical" },
+            "severity": { "$ref": "#/$defs/severity" }
+          }
+        }
       }
     }
   }

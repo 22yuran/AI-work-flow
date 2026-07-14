@@ -12,22 +12,23 @@
 
 ## 阶段① 生成验收基准(handoff-contract.json)
 
-底层逻辑两半,分别产出:
+**基准的单位是「语义模块」,不是光栅化副本的 frame 嵌套。** 语义模块 = 任何前端实现都会表达的块(头/副标题/正文/区块/可折叠项/列表项/卡片…),复用插件 `detectModules` 的"跳过透明包裹层"判据识别。每个语义模块**同时带两个维度**:细节 + 相对兄弟的间距。光栅化副本只作**视觉参考/占位**,不作基准的结构来源(它的深层 frame 嵌套和前端 DOM 对不齐,会产生大量映射不上的噪声)。
 
-### A. 整体页面 → 间距/位置(`gaps` + 各模块 `bbox`)
-- 从整体页面(可用插件生成的副本/整页,或原始设计稿)用 `get_metadata` 读布局树(每块 x/y/w/h)。
-- **间距全集必须靠枚举、不许手挑**(手挑必漏):把 `get_metadata` 输出存成文件,喂给
-  `node ${SKILL_DIR}/scripts/enumerate-gaps.mjs <tree.xml>` → 自动列出**每一组同级模块的相邻间距全集**
-  (纵/横向、跳过隐藏子树、模块粒度不产生噪声),产出 `enumerated-gaps.json` 作为 `gaps[]` 的完整起点。
-- 每个模块的 `bbox` 写进 `modules[]`。
-- **完整性铁律**:`gaps[]` 来自枚举器全集;凡是没纳入检查或映射不到 dev 的,必须在报告里**列出来**(覆盖 X/N),禁止把子集当全集。**即使模块是 PNG 占位,位置/间距也是真实的**。
+底层逻辑两半,现在**收敛到同一批语义模块上**:
+
+### A. 间距/位置(整体页面半 → 挂在模块上)
+- 首选 `gapBefore: { after, value, direction }` 写在模块上(**细节+间距合一**);或用顶层 `gaps[]`(显式 from/to)。
+- 值可用 `get_metadata` 布局树 + `enumerate-gaps.mjs --granularity=module` 枚举**语义模块级**的相邻间距全集得到(不逐层钻到叶子,避免噪声)。
+- **完整性铁律**:凡未纳入检查或映射不到 dev 的,报告须列出(覆盖 X/N),禁止把子集当全集。
 
 ### B. 模块组件 → 内部细节(`modules[]` 其余字段)
 - 对每个真实模块节点用 `get_design_context` 读:字体(family/size/lineHeight/weight)、颜色**真值**(rgba,不抄 `var(--token,#xxx)` 的 fallback)、圆角、文案(分 `label`/`data`)、状态。
 - 逐个模块地读(一次太多易错),对应 V1"一个一个贴链接"的习惯。
 
 ### C. mapping
-- 每个模块补 `mapping.selector`(建议前端加 `data-review-id`)或 `fallback.anchorText`。这是验收可靠性的天花板。
+- **优先用前端现成的语义 class/结构**(如 `.ai-diagnosis-header`、`.collapse-trigger`)——语义模块通常有稳定命名,**前端零改动即可映射**(aiDiagnosis 案例 6/6 模块全靠现成 class 命中)。
+- 仅当 class 不稳(如 utility/哈希类名)时,才请前端加 `mapping.fallback.anchorText` 能覆盖的锚点文案,或 `data-review-id`。这是**兜底,不是负担**。
+- 铁律不变:映射不到就在报告标 `matchConfidence`,不静默跳过。
 
 产出 `handoff-contract.json`,字段/schema 见 `CONTRACT.md` + `contract.schema.json`。
 

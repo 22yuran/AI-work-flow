@@ -16,11 +16,18 @@ import process from "node:process";
 const args = process.argv.slice(2);
 const file = args.find((a) => !a.startsWith("--"));
 const minGap = Number((args.find((a) => a.startsWith("--min=")) || "--min=1").split("=")[1]);
+// 粒度: all = 所有相邻间距; module = 只留涉及真模块的间距(跳过叶子形状之间的
+// 卡片内部间距，如 PNG 标题行↔内容行),让全集是"可见模块之间"的真间距。
+const granularity = (args.find((a) => a.startsWith("--granularity=")) || "--granularity=all").split("=")[1];
 if (!file) {
-  console.error("用法: node enumerate-gaps.mjs <metadata.xml> [--min=1]");
+  console.error("用法: node enumerate-gaps.mjs <metadata.xml> [--min=1] [--granularity=all|module]");
   process.exit(2);
 }
 const xml = fs.readFileSync(file, "utf8");
+
+// frame/组/组件/区块 = 模块容器; rounded-rectangle/text/vector 等 = 叶子形状。
+const MODULE_TAGS = new Set(["frame", "group", "component", "component-set", "section", "instance"]);
+const isModule = (n) => MODULE_TAGS.has(n.tag);
 
 // --- 解析 get_metadata 的标签树 ---
 function parse(src) {
@@ -68,6 +75,8 @@ function visit(node) {
       const value = vertical
         ? Math.round(cur.y - (prev.y + prev.height))
         : Math.round(cur.x - (prev.x + prev.width));
+      // module 粒度:跳过"两端都是叶子形状"的间距(卡片内部 title↔content 那类)。
+      if (granularity === "module" && !isModule(prev) && !isModule(cur)) continue;
       if (value >= minGap) {
         gaps.push({
           parent: label(node),
