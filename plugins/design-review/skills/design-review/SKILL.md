@@ -47,8 +47,12 @@ node review.mjs --contract <contract.json> --url <localhost 或 file://> \
 ```
 认证型 SPA:`--connect http://localhost:9222` 接管已登录 Chrome(见 WORKFLOW 备注)。
 
+## 折叠内容与 CSS 圆点(已支持)
+- **折叠态**:默认收起(`display:none`)的内容测不到 → `--expand "<触发器选择器>"` 让引擎先点开再测。
+- **CSS 画的圆点/环**:项目符号多是 `::before` 伪元素(选择器抓不到)→ `target` 末尾加 `::before`/`::after`,引擎读其 computed 尺寸/颜色(环验 border-color、填充点验 background-color)。
+
 ## 边界(有意不做)
-交互态(hover/点击后态)需脚本驱动,留后续;颜色 token 名不回收(只比 rgba 值);多断点响应式按 `canvas.width` 单宽验收。
+交互态里**折叠可展开**(见上);hover/排序点击后态仍需脚本驱动,留后续。颜色 token 名不回收(只比 rgba 值);多断点响应式按 `canvas.width` 单宽验收。
 
 ## Related
 - 生成交付包(V1) → `figma-handoff` skill(本 skill 不改它)。

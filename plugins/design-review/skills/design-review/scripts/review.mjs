@@ -156,17 +156,27 @@ function colorWithin(exp, act, tol) {
 // --------------------------------------------------------------------------
 /* eslint-disable */
 function pageExtract(spec) {
-  function box(el) {
+  // pseudo 为 "::before"/"::after" 时读伪元素的 computed style（CSS 画的圆点/环）。
+  function box(el, pseudo) {
     if (!el) return null;
-    const r = el.getBoundingClientRect();
-    const cs = getComputedStyle(el);
+    const cs = getComputedStyle(el, pseudo || null);
+    let w, h, top, left, bottom, right;
+    if (pseudo) {
+      // 伪元素没有 getBoundingClientRect，尺寸取 computed width/height。
+      w = Math.round(parseFloat(cs.width) || 0);
+      h = Math.round(parseFloat(cs.height) || 0);
+      top = left = bottom = right = null;
+    } else {
+      const r = el.getBoundingClientRect();
+      w = Math.round(r.width);
+      h = Math.round(r.height);
+      top = Math.round(r.top);
+      left = Math.round(r.left);
+      bottom = Math.round(r.bottom);
+      right = Math.round(r.right);
+    }
     const out = {
-      w: Math.round(r.width),
-      h: Math.round(r.height),
-      top: Math.round(r.top),
-      left: Math.round(r.left),
-      bottom: Math.round(r.bottom),
-      right: Math.round(r.right),
+      w, h, top, left, bottom, right,
       fontFamily: cs.fontFamily,
       fontSize: cs.fontSize,
       lineHeight: cs.lineHeight,
@@ -184,15 +194,26 @@ function pageExtract(spec) {
       p_l: cs.paddingLeft,
       columnGap: cs.columnGap,
       rowGap: cs.rowGap,
-      text: (el.textContent || "").replace(/\s+/g, " ").trim()
+      text: pseudo ? "" : (el.textContent || "").replace(/\s+/g, " ").trim()
     };
-    if (el.tagName === "IMG") {
+    if (!pseudo && el.tagName === "IMG") {
       out.naturalW = el.naturalWidth;
       out.naturalH = el.naturalHeight;
       out.renderedW = Math.round(r.width);
       out.renderedH = Math.round(r.height);
     }
     return out;
+  }
+
+  // Resolve a target selector (relative to a module root). Supports a trailing
+  // "::before"/"::after" to measure a CSS pseudo-element (e.g. list-marker dots).
+  function resolveBox(root, sel) {
+    const pm = /^(.*?)(::before|::after)$/.exec(sel);
+    if (pm) {
+      const baseEl = pm[1] ? root.querySelector(pm[1]) : root;
+      return box(baseEl, pm[2]);
+    }
+    return box(root.querySelector(sel));
   }
 
   function findByAnchor(anchorText, near) {
@@ -239,7 +260,7 @@ function pageExtract(spec) {
       if (sel === "self") {
         targets.self = box(root);
       } else {
-        targets[sel] = box(root.querySelector(sel));
+        targets[sel] = resolveBox(root, sel);
       }
     }
     results.push({
@@ -500,6 +521,16 @@ async function main() {
     // the target modules exist in the DOM).
     if (args.waitFor) {
       await page.waitForSelector(args.waitFor, { timeout: Number(args.timeout) || 30000 });
+    }
+    // Optionally click elements open (collapsibles) so hidden content becomes
+    // measurable. Each match is clicked once.
+    if (args.expand) {
+      try {
+        await page.$$eval(args.expand, (els) => els.forEach((e) => e.click()));
+        await new Promise((r) => setTimeout(r, Number(args.expandDelay) || 800));
+      } catch {
+        // no matches / not clickable — ignore, measure as-is
+      }
     }
     if (args.delay) {
       await new Promise((r) => setTimeout(r, Number(args.delay)));

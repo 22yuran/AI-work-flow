@@ -45,10 +45,16 @@ node ${SKILL_DIR}/scripts/review.mjs \
   --contract <contract.json> \
   --url <localhost 或 file://...>（或 --connect <cdp>） \
   --waitFor "<客户端渲染出现的关键选择器，如 .collapse-label>" \
+  --expand "<可选：要点开的折叠触发器，如 .collapse-trigger>" \
   --delay <毫秒，可选> \
   --out <输出目录>
 ```
 产出 `<out>/review-findings.json`(客观:expected/actual/severity/matchConfidence)。
+
+**折叠态**:默认收起的内容(`display:none`)测不到 → 用 `--expand "<触发器选择器>"` 让引擎先逐个点开,再测。
+
+**CSS 画的圆点/环(伪元素)**:项目符号常是 `::before`,无法用选择器抓 → 在 `typography`/`colors` 的 `target` 末尾加 `::before`/`::after`,引擎用 `getComputedStyle(el, '::before')` 读它(尺寸取 computed width/height,颜色取 border-color/background-color)。例:环形项目符号验描边色 →
+`{ "target": ".collapse-content > li::before", "prop": "border-color", "value": "#fa5151" }`。
 
 ### 3. AI 归纳报告
 读 `review-findings.json` → 写 `design-review-report.md`(可选 HTML 可视化:色块对比、✓/⚠/ℹ 徽章):
