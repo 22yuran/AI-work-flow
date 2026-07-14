@@ -14,6 +14,14 @@
       "author": { "name": "22yuran" },
       "source": "./plugins/figma-handoff",
       "category": "design"
+    },
+    {
+      "name": "design-review",
+      "description": "基于 hand-off contract 的开发交付验收：加载开发页面，按 contract 定位每个模块，抽取 computed style/bbox/文本/图片尺寸并带容差比对，输出客观走查清单（模块缺失、尺寸/间距/字体/圆角/颜色不符、文案缺失、图片拉伸）。规则给结论，AI 只归纳，不依赖 Figma。",
+      "version": "1.0.0",
+      "author": { "name": "22yuran" },
+      "source": "./plugins/design-review",
+      "category": "design"
     }
   ]
 }

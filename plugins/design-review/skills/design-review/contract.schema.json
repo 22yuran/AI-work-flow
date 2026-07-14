@@ -1,0 +1,221 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/22yuran/AI-work-flow/design-review/contract.schema.json",
+  "title": "Hand-off Contract",
+  "type": "object",
+  "required": ["contractVersion", "source", "modules"],
+  "additionalProperties": false,
+  "properties": {
+    "contractVersion": { "type": "string", "const": "1.0" },
+    "project": { "type": "string" },
+    "source": {
+      "type": "object",
+      "required": ["canvas"],
+      "additionalProperties": false,
+      "properties": {
+        "figmaFileKey": { "type": "string" },
+        "pageName": { "type": "string" },
+        "rootNodeId": { "type": "string" },
+        "canvas": {
+          "type": "object",
+          "required": ["width", "height"],
+          "additionalProperties": false,
+          "properties": {
+            "width": { "type": "number", "exclusiveMinimum": 0 },
+            "height": { "type": "number", "exclusiveMinimum": 0 }
+          }
+        }
+      }
+    },
+    "tolerances": { "$ref": "#/$defs/tolerances" },
+    "modules": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/module" }
+    }
+  },
+  "$defs": {
+    "severity": { "enum": ["error", "warn", "info", "off"] },
+    "tolerances": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "size": { "$ref": "#/$defs/absTol" },
+        "spacing": { "$ref": "#/$defs/absTol" },
+        "radius": { "$ref": "#/$defs/absTol" },
+        "fontSize": { "$ref": "#/$defs/absTol" },
+        "lineHeight": { "$ref": "#/$defs/absTol" },
+        "fontWeight": { "$ref": "#/$defs/absTol" },
+        "imageRatio": { "type": "object", "additionalProperties": false, "properties": { "pct": { "type": "number", "minimum": 0 } } },
+        "color": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "perChannel": { "type": "number", "minimum": 0 },
+            "alpha": { "type": "number", "minimum": 0 },
+            "deltaE": { "type": "number", "minimum": 0 }
+          }
+        }
+      }
+    },
+    "absTol": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "abs": { "type": "number", "minimum": 0 },
+        "pct": { "type": "number", "minimum": 0 }
+      }
+    },
+    "module": {
+      "type": "object",
+      "required": ["moduleId", "mapping"],
+      "additionalProperties": false,
+      "properties": {
+        "moduleId": { "type": "string" },
+        "name": { "type": "string" },
+        "role": { "type": "string" },
+        "parentId": { "type": ["string", "null"] },
+        "mapping": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "selector": { "type": "string" },
+            "fallback": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "anchorText": { "type": "string" },
+                "nearBBox": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "x": { "type": "number" }, "y": { "type": "number" },
+                    "w": { "type": "number" }, "h": { "type": "number" }
+                  }
+                }
+              }
+            }
+          },
+          "anyOf": [
+            { "required": ["selector"] },
+            { "required": ["fallback"] }
+          ]
+        },
+        "bbox": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": { "w": { "type": "number" }, "h": { "type": "number" } }
+        },
+        "spacing": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "layoutMode": { "enum": ["HORIZONTAL", "VERTICAL", "NONE"] },
+            "gap": { "type": "number", "minimum": 0 },
+            "padding": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "top": { "type": "number" }, "right": { "type": "number" },
+                "bottom": { "type": "number" }, "left": { "type": "number" }
+              }
+            }
+          }
+        },
+        "radius": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "tl": { "type": "number" }, "tr": { "type": "number" },
+            "br": { "type": "number" }, "bl": { "type": "number" }
+          }
+        },
+        "typography": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "target": { "type": "string" },
+              "family": { "type": "string" },
+              "size": { "type": "number" },
+              "lineHeight": { "type": "number" },
+              "weight": { "type": "number" }
+            }
+          }
+        },
+        "colors": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["prop", "value"],
+            "additionalProperties": false,
+            "properties": {
+              "target": { "type": "string" },
+              "prop": { "enum": ["color", "background-color", "border-color"] },
+              "token": { "type": "string" },
+              "value": { "type": "string" }
+            }
+          }
+        },
+        "texts": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["content", "kind"],
+            "additionalProperties": false,
+            "properties": {
+              "content": { "type": "string" },
+              "kind": { "enum": ["label", "data"] },
+              "format": { "type": "string" }
+            }
+          }
+        },
+        "images": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["intrinsic"],
+            "additionalProperties": false,
+            "properties": {
+              "target": { "type": "string" },
+              "intrinsic": {
+                "type": "array",
+                "items": { "type": "number" },
+                "minItems": 2, "maxItems": 2
+              },
+              "fit": { "enum": ["cover", "contain", "fill", "none"] }
+            }
+          }
+        },
+        "states": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["name"],
+            "additionalProperties": false,
+            "properties": {
+              "name": { "type": "string" },
+              "rendered": { "type": "boolean" },
+              "note": { "type": "string" }
+            }
+          }
+        },
+        "checks": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "bbox": { "$ref": "#/$defs/severity" },
+            "spacing": { "$ref": "#/$defs/severity" },
+            "radius": { "$ref": "#/$defs/severity" },
+            "typography": { "$ref": "#/$defs/severity" },
+            "color": { "$ref": "#/$defs/severity" },
+            "text": { "$ref": "#/$defs/severity" },
+            "image": { "$ref": "#/$defs/severity" },
+            "states": { "$ref": "#/$defs/severity" }
+          }
+        },
+        "toleranceOverrides": { "$ref": "#/$defs/tolerances" }
+      }
+    }
+  }
+}

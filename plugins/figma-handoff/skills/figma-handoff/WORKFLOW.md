@@ -152,6 +152,7 @@ handoff-<模块名>/
 ### 5. 生成元数据
 - `handoff-manifest.json`（字段见上；assets 按视觉顺序）。
 - `handoff-audit.md` —— 取自步骤 2 元数据的尺寸/间距核对表 + **有意未做**（无交互、区块未拆组件、无依赖/构建）+ 上面「校准信号」的 **② 设计 token 表** 和 **③ 状态/变体清单**（真实代码包尤其要写；整页占位包按需）。
+- **`handoff-contract.json`** —— 把上面的 audit 数据**结构化**成机器可读的验收基准，供 `design-review` skill 自动核对开发交付。字段与 schema 见 design-review skill 的 `CONTRACT.md`：`{ contractVersion:"1.0", source:{canvas:{width,height}}, tolerances, modules:[{ moduleId, mapping, bbox, spacing, radius, typography[], colors[](存真值 rgba), texts[](label/data 分离), images[](本征尺寸), states[] }] }`。数据来源：`get_metadata`(bbox/间距) + `get_design_context`(字体/颜色 token 真值) + 文本节点内容 + cornerRadius。**这一步把交付包从"给前端的负担"变成"交付的验收基准"。**
 - `README.md` —— 包含内容 / 如何运行（浏览器打开 `source/index.html`，相对路径、无构建）/ 有意排除。
 
 ### 6. 验收（1:1）

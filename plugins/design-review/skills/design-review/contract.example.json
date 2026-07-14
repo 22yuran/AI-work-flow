@@ -1,0 +1,86 @@
+{
+  "contractVersion": "1.0",
+  "project": "商品列表页示例",
+  "source": {
+    "figmaFileKey": "",
+    "pageName": "Page 1",
+    "rootNodeId": "570:15848",
+    "canvas": { "width": 1280, "height": 900 }
+  },
+  "tolerances": {
+    "size": { "abs": 1 },
+    "spacing": { "abs": 2 },
+    "radius": { "abs": 1 },
+    "fontSize": { "abs": 0 },
+    "lineHeight": { "abs": 1 },
+    "fontWeight": { "abs": 0 },
+    "color": { "perChannel": 4, "alpha": 0.04 },
+    "imageRatio": { "pct": 2 }
+  },
+  "modules": [
+    {
+      "moduleId": "85:5505",
+      "name": "表格标题行",
+      "role": "sortable-table-header",
+      "parentId": "85:5000",
+      "mapping": {
+        "selector": "[data-review-id='table-header']",
+        "fallback": { "anchorText": "商品名称", "nearBBox": { "x": 48, "y": 320, "w": 1184, "h": 44 } }
+      },
+      "bbox": { "w": 1184, "h": 44 },
+      "spacing": {
+        "layoutMode": "HORIZONTAL",
+        "gap": 16,
+        "padding": { "top": 12, "right": 24, "bottom": 12, "left": 24 }
+      },
+      "radius": { "tl": 8, "tr": 8, "br": 0, "bl": 0 },
+      "typography": [
+        { "target": "[data-review-id='th-title']", "family": "PingFang SC", "size": 14, "lineHeight": 20, "weight": 500 }
+      ],
+      "colors": [
+        { "target": "self", "prop": "background-color", "token": "BG/Container", "value": "#f7f7f7" },
+        { "target": "[data-review-id='th-title']", "prop": "color", "token": "Text/正文", "value": "rgba(0,0,0,0.9)" }
+      ],
+      "texts": [
+        { "content": "商品名称", "kind": "label" },
+        { "content": "销量", "kind": "label" }
+      ],
+      "images": [],
+      "states": [
+        { "name": "default", "rendered": true },
+        { "name": "sort-asc", "rendered": false, "note": "设计未提供，前端补" },
+        { "name": "sort-desc", "rendered": false }
+      ],
+      "checks": {
+        "bbox": "error", "spacing": "error", "radius": "warn",
+        "typography": "error", "color": "warn", "text": "error", "states": "info"
+      }
+    },
+    {
+      "moduleId": "85:5540",
+      "name": "商品行",
+      "role": "product-row",
+      "parentId": "85:5000",
+      "mapping": { "selector": "[data-review-id='product-row']" },
+      "bbox": { "w": 1184, "h": 72 },
+      "spacing": { "layoutMode": "HORIZONTAL", "gap": 12, "padding": { "top": 8, "right": 16, "bottom": 8, "left": 16 } },
+      "radius": { "tl": 0, "tr": 0, "br": 0, "bl": 0 },
+      "typography": [
+        { "target": "[data-review-id='goods-name']", "family": "PingFang SC", "size": 14, "lineHeight": 22, "weight": 400 }
+      ],
+      "colors": [
+        { "target": "[data-review-id='price']", "prop": "color", "token": "Text/涨", "value": "#e34d59" }
+      ],
+      "texts": [
+        { "content": "商品名称", "kind": "data" },
+        { "content": "￥1,299", "kind": "data", "format": "currency-cny" }
+      ],
+      "images": [
+        { "target": "[data-review-id='avatar']", "intrinsic": [56, 56], "fit": "cover" }
+      ],
+      "checks": {
+        "bbox": "error", "spacing": "error", "typography": "error", "color": "warn", "text": "warn", "image": "error"
+      }
+    }
+  ]
+}

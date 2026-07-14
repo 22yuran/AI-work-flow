@@ -1,0 +1,14 @@
+{
+  "name": "design-review-engine",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Rule-based design-delivery acceptance engine: compares a dev page against a hand-off contract.",
+  "bin": { "design-review": "review.mjs" },
+  "scripts": {
+    "review": "node review.mjs"
+  },
+  "dependencies": {
+    "puppeteer-core": "^23.0.0"
+  }
+}

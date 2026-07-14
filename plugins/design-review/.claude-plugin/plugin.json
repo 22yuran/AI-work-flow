@@ -1,0 +1,11 @@
+{
+  "name": "design-review",
+  "description": "Rule-based acceptance of a frontend delivery against a design hand-off contract. Loads the dev page in a real browser, locates each module via the contract's mapping, extracts computed styles / bounding boxes / text / image sizes, and compares them to the contract with tolerances — outputting an objective findings list (missing modules, wrong size/spacing/font/radius/color, missing copy, distorted images). Not a code diff and not screenshot guessing: rules decide, AI only summarizes.",
+  "version": "1.0.0",
+  "author": {
+    "name": "22yuran"
+  },
+  "homepage": "https://github.com/22yuran/AI-work-flow",
+  "repository": "https://github.com/22yuran/AI-work-flow",
+  "license": "MIT"
+}
