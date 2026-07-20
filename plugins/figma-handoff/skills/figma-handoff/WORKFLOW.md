@@ -59,8 +59,8 @@
 - 只处理指定节点/模块区域，不臆造缺失的区块。**同类元素若 Figma 给了不同值（字号/字重/颜色/尺寸/间距等），必须逐个按各自实际值还原，禁止图省事统一套一套样式。**
 - **CSS token 取整数**（px、gap、padding、尺寸）。**例外——边框/分隔线宽度按 Figma 实际值，不取整**：`0.5px` hairline 就写 `0.5px`（视网膜屏上就是那根极细线，取整成 `1px` 会失真变粗）。SVG `viewBox` 内部小数同样保留。
 - 用 **flex 自适应**；不用绝对定位、不写死内容宽度——**例外**：页面骨架容器（`.page`、侧边导航、顶部导航）可保留固定宽/绝对定位以对齐 Figma 画布。
-- 每条 CSS 规则加头部注释：`/* 区块名 <node-id> — 宽x高 */`。
-- **颜色取真实绑定值，不信 fallback**：用 `get_design_context` 的命名 token 实际值，或从 `get_screenshot` 采样像素；**绝不直接抄 `var(--token, #xxx)` 里逗号后的 `#xxx`**——那只是变量声明的默认兜底，常与本设计实际生效值不符（如 fallback 写 `#07c160`、实际是 `#0ab8a6`）。语义色（状态点、禁用占位、涨跌等）同理，一律核对真值，不猜。
+- 每条 CSS 规则加头部注释：`/* 区块名 <node-id> — 宽x高 */`。**同时给每个区块根元素加惰性属性 `data-node-id="<node-id>"`**（不影响视觉，供步骤 6 的几何自校验按节点映射比对）。
+- **颜色必须取 `get_design_context` 的真实 token 值**：用命名 token 的实际值；**绝不直接抄 `var(--token, #xxx)` 里逗号后的 `#xxx`**（那只是兜底默认，常与实际不符）。**若 `get_design_context` 取不到（目标文件不是 Figma 活动标签会报 not found）→ 停下，请用户在 Figma 里激活该文件/选中节点后重取,不得用截图采样/估的颜色交付**——采样极易出错（真实案例：链接色 `chromatic/link #576b95` 被采样成青绿 `#07c1a3`）。语义色同理,一律取真值,不猜。
 - **图标按 viewBox 本征比例渲染，核对朝向**：图标尺寸取其 SVG `viewBox` 的原始宽高比；**若 Figma 框的宽高比与 viewBox 对不上，说明框上有旋转/变换**（导出 SVG 常丢失这层，导致方向错、被压扁）——必须对截图核对朝向，用 transform 补正，**禁止 `preserveAspectRatio:none` 硬拉**。同理，占位符字符按设计实际用（`—`/`–`/`-` 长短不同），不随手用 ASCII 短横。
 
 ## 校准信号（帮前端用 AI 更准地还原）——只进注释与旁路文档，绝不进渲染代码
@@ -102,7 +102,7 @@ handoff-<模块名>/
 **manifest 字段**：`module`、`figmaNodeId`、`type: "placeholder-mockup"`、`stack: ["html","css"]`、`canvas: {width,height}`、`assets: [{file, node, size:[w,h], name}]`。
 
 **index.html 语义骨架示例**（class 词汇表，按需增减）：
-`.page`（画布，固定宽、可绝对定位子元素）→ `.content`（内容区，flex 纵向 gap）→ `.stack`（主堆栈 gap 16）→ `.card`（白底圆角 padding 24 gap 24）/ `.card-plain`（无内边距圆角容器）→ `.block-pad`（分块内边距 24）→ `.row`（横排卡片 gap 16）。每个区块是 `<img class="…" src="assets/….png" alt="块名">`，前面加 `<!-- 区块名 <node-id> -->`。
+`.page`（画布，固定宽、可绝对定位子元素）→ `.content`（内容区，flex 纵向 gap）→ `.stack`（主堆栈 gap 16）→ `.card`（白底圆角 padding 24 gap 24）/ `.card-plain`（无内边距圆角容器）→ `.block-pad`（分块内边距 24）→ `.row`（横排卡片 gap 16）。每个区块是 `<img class="…" src="assets/….png" alt="块名" data-node-id="<node-id>">`，前面加 `<!-- 区块名 <node-id> -->`。（`data-node-id` 惰性、不影响视觉，供步骤 6b 几何自校验映射。）
 
 **styles.css 基线**：`* { margin:0; padding:0; box-sizing:border-box }`；`img{display:block}`；`body` 背景 `#f7f7f7`、字体 `-apple-system,"PingFang SC","Microsoft YaHei",sans-serif`。骨架容器给显式 height/`min-height`，避免绝对定位子元素令页面高度塌陷。
 
@@ -171,3 +171,17 @@ CHROME="/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
 - `<画布高>` 取自 manifest canvas，避免截断。**已知坑**：绝对定位的 `.content`/`.sidenav` 会把 `.page` 高度塌陷为 0 → 底部被裁。修法：给 `.page` 显式 `min-height` 等于真实内容高度。
 - 读 preview.png，与 Figma 截图逐区块比对，结果记进 audit 表。
 - **小元素单独放大比对**：整模块缩略图里，`<24px` 的关键元素（图标、色点、单选/复选、破折号占位等）看不清，颜色/朝向/字形的错会漏过整体 overlay——必须对这些元素**放大**（截局部或调大窗口）单独核对。**改任何样式后必须重新截图**：preview 与当前代码不一致（如改了色值却用旧图）等于没验收。
+
+#### 6b. 几何自校验（防"图省事"，强制）
+
+肉眼看截图会放过结构/位置偷懒（两段线做成一条、标签没居中、气泡没对准）。所以**除了截图,必须跑一遍机器几何对账**——把步骤 2 的 `get_metadata` 输出存成 xml，喂给 design-review skill 的 `verify-geometry.mjs`：
+
+```bash
+node <design-review skill 目录>/scripts/verify-geometry.mjs \
+  --metadata <get_metadata输出.xml> --root <顶层节点id> \
+  --url "file://$PWD/source/index.html" --tol 2
+```
+- 它复用一次无头渲染，逐节点量**渲染几何 vs Figma 位置/尺寸**：超容差报**偏差**、metadata 有但 HTML 缺 `data-node-id` 报**缺失**。
+- **偏差 / 缺失必须修到通过**（`通过 N · 偏差 0 · 缺失 0`,缺失里排除有意不逐一标注的叶子)才算验收完成。
+- 两条前提：① 喂**真实 `get_metadata`**（别手敲近似值）；② `data-node-id` 打在**与设计节点盒子对应的元素**上（是文字就打文字,不是打居中外壳)。
+- 依赖 `puppeteer-core`（design-review skill 的 `scripts/` 已配）。二者同属 ai-work-flow,一并安装即可。
